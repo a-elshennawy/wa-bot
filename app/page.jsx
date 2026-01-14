@@ -15,11 +15,18 @@ export default function Home() {
     import("bootstrap/dist/js/bootstrap.bundle.min.js")
       .then(() => console.log("Bootstrap JS loaded correctly"))
       .catch(console.error);
-  }, []);
 
-  window.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-  });
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener("contextmenu", handleContextMenu);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, []);
 
   return (
     <>
