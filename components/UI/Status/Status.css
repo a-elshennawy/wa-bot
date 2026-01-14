@@ -1,0 +1,26 @@
+.status {
+    position: fixed;
+    top: 0.625rem;
+    right: 0.625rem;
+    border-radius: 0.625rem;
+    padding: 0.313rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    font-weight: bolder;
+    z-index: 9999;
+}
+
+.connected {
+    filter: drop-shadow(0 0 0.625rem var(--connected));
+    box-shadow: 0 0 0.625rem var(--connected);
+    border: 1px solid var(--connected);
+    color: var(--connected);
+}
+
+.error {
+    filter: drop-shadow(0 0 0.625rem var(--error));
+    box-shadow: 0 0 0.625rem var(--error);
+    border: 1px solid var(--error);
+}

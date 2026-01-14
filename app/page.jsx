@@ -1,6 +1,12 @@
 "use client";
-import First from "@/components/First/First";
-import Second from "@/components/Second/Second";
+import ApiKeyGenerator from "@/components/inPageComponents/ApiKeyGenerator/ApiKeyGenerator";
+import Authentication from "@/components/inPageComponents/Authentication/Authentication";
+import BotStatus from "@/components/inPageComponents/BotStatus/BotStatus";
+import BtnMessage from "@/components/inPageComponents/BtnMessage/BtnMessage";
+import RecentActivities from "@/components/inPageComponents/RecentActivities/RecentActivities";
+import SendMessage from "@/components/inPageComponents/SendMessage/SendMessage";
+import Webhook from "@/components/inPageComponents/Webhook/Webhook";
+import Status from "@/components/UI/Status/Status";
 import { useEffect } from "react";
 
 export default function Home() {
@@ -11,10 +17,22 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
+  window.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+  });
+
   return (
     <>
-      <First />
-      <Second />
+      <Status />
+      <div className="mainContainer py-3 z-2">
+        <BotStatus />
+        <ApiKeyGenerator />
+        <Authentication />
+        <SendMessage />
+        <BtnMessage />
+        <Webhook />
+        <RecentActivities />
+      </div>
     </>
   );
 }

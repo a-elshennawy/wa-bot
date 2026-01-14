@@ -1,15 +1,176 @@
 * {
     box-sizing: border-box;
+    text-transform: capitalize;
+}
+
+:root {
+    font-size: 16px;
+    --black: #000;
+    --white: #fff;
+    --connected: #0fff00;
+    --error: #fd0000;
+}
+
+@font-face {
+    font-family: "jost";
+    src: url("/fonts/Jost-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "cairo";
+    src: url("/fonts/Cairo-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
 }
 
 .glassmorphism {
     background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(1.25rem);
+    backdrop-filter: blur(1.875rem);
     -webkit-backdrop-filter: blur(1.25rem);
     border: 0.063rem solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 0.25rem 1.875rem rgba(0, 0, 0, 0.1);
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+html,
+body {
+    height: auto;
+    min-height: 100dvh;
+    width: 100dvw;
+    overflow-x: hidden;
+    overflow-y: auto;
+    cursor: url("/icons/cursor.png"), default;
+}
+
 body {
     position: relative;
+    background-color: var(--black) !important;
+    font-family: "jost", "cairo" !important;
+}
+
+button {
+    &:hover {
+        cursor: url("/icons/tap.png"), default !important;
+    }
+}
+
+input,
+textarea {
+    &:hover {
+        cursor: url("/icons/type.png"), default !important;
+    }
+}
+
+a {
+    text-decoration: none !important;
+    color: var(--white) !important;
+
+    &:hover {
+        cursor: url("/icons/tap.png"), default !important;
+    }
+}
+
+.mainContainer {
+    position: absolute;
+    max-width: 90%;
+    margin: 0 auto;
+    column-count: 3;
+    column-gap: 1rem;
+    padding: 1rem;
+    pointer-events: none;
+
+    .colCard {
+        break-inside: avoid;
+        width: 100%;
+        margin-bottom: 0.313rem;
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2) !important;
+        border: none;
+        backdrop-filter: blur(1.875rem);
+        color: var(--white);
+        text-transform: capitalize;
+        pointer-events: auto;
+
+        .cardHeader {
+            display: flex;
+            align-items: center;
+            justify-content: start;
+            gap: 0.313rem;
+        }
+
+        .content {
+            border-radius: 0.625rem;
+        }
+
+        .inputContainer {
+            input,
+            textarea {
+                padding: 0.313rem;
+                border-radius: 0.625rem;
+                width: 100%;
+                color: var(--white);
+
+                &::placeholder {
+                    color: var(--white);
+                }
+
+                &:focus {
+                    outline: none;
+                    box-shadow: 0 0.25rem 1.875rem rgba(0, 0, 0, 0.5);
+                }
+            }
+        }
+
+        form {
+            border-radius: 0.625rem;
+        }
+
+        .actions {
+            button {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                gap: 0.313rem;
+                padding: 0.313rem 0.625rem;
+                margin-inline-end: 0.313rem;
+                border-radius: 0.625rem;
+                text-transform: capitalize;
+                color: var(--white);
+                box-shadow: 0 0.25rem 1.875rem rgba(0, 0, 0, 0.5);
+                transition: all 0.3s ease-in-out;
+
+                &:hover {
+                    filter: drop-shadow(0 0 0.625rem var(--connected));
+                }
+            }
+        }
+    }
+}
+
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+@media (max-width: 992px) {
+    .mainContainer {
+        column-count: 2;
+    }
+}
+@media (max-width: 576px) {
+    .mainContainer {
+        column-count: 1;
+    }
 }
