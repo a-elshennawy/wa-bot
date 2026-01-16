@@ -52,6 +52,7 @@ function startBot() {
     },
     puppeteer: {
       headless: true,
+      executablePath: process.env.CHROME_PATH || "/usr/bin/google-chrome",
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -182,7 +183,7 @@ app.post("/api/send", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`API Bridge running on port ${port}`);
   startBot();
 });
