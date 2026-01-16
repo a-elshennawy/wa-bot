@@ -5,9 +5,6 @@ import ColorBends from "@/components/UI/ColorBends/ColorBends";
 export const metadata = {
   title: "Wa-Bot",
   description: "whats-App Bot",
-  icons: {
-    icon: "/favicon.ico",
-  },
 };
 
 export default function RootLayout({ children }) {
