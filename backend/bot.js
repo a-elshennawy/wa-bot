@@ -55,7 +55,8 @@ function startBot() {
       executablePath:
         process.env.CHROME_PATH ||
         "/usr/bin/google-chrome-stable" ||
-        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome" ||
+        "/usr/bin/chromium",
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
