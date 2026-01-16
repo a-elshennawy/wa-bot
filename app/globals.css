@@ -9,6 +9,7 @@
     --white: #fff;
     --connected: #0fff00;
     --error: #fd0000;
+    --disabled: #c4c4c4;
 }
 
 @font-face {
@@ -33,6 +34,10 @@
     box-shadow: 0 0.25rem 1.875rem rgba(0, 0, 0, 0.1);
 }
 
+.disabledBtn {
+    background-color: var(--disabled);
+}
+
 h1,
 h2,
 h3,
@@ -51,7 +56,7 @@ body {
     width: 100dvw;
     overflow-x: hidden;
     overflow-y: auto;
-    cursor: url("/icons/cursor.png"), default;
+    cursor: url("/cursor/cursor.png"), default;
 }
 
 body {
@@ -62,14 +67,22 @@ body {
 
 button {
     &:hover {
-        cursor: url("/icons/tap.png"), default !important;
+        cursor: url("/cursor/tap.png"), default !important;
+    }
+
+    &:disabled {
+        cursor: url("/cursor/block.png"), default !important;
     }
 }
 
 input,
 textarea {
     &:hover {
-        cursor: url("/icons/type.png"), default !important;
+        cursor: url("/cursor/type.png"), default !important;
+    }
+
+    &:disabled {
+        cursor: url("/cursor/block.png"), default !important;
     }
 }
 
@@ -78,7 +91,10 @@ a {
     color: var(--white) !important;
 
     &:hover {
-        cursor: url("/icons/tap.png"), default !important;
+        cursor: url("/cursor/tap.png"), default !important;
+    }
+    &:disabled {
+        cursor: url("/cursor/block.png"), default !important;
     }
 }
 
@@ -112,6 +128,24 @@ a {
 
         .content {
             border-radius: 0.625rem;
+
+            ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+
+                li {
+                    padding: 0.313rem 0rem;
+
+                    .message {
+                        color: var(--white);
+                    }
+
+                    .reply {
+                        color: var(--connected);
+                    }
+                }
+            }
         }
 
         .inputContainer {
@@ -131,10 +165,6 @@ a {
                     box-shadow: 0 0.25rem 1.875rem rgba(0, 0, 0, 0.5);
                 }
             }
-        }
-
-        form {
-            border-radius: 0.625rem;
         }
 
         .actions {
