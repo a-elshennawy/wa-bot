@@ -75,12 +75,12 @@ function SendMessage({ isActive }) {
         >
           {loading ? (
             <>
-              send&nbp;
+              send&nbsp;
               <CircularProgress size={18} color="var(--white)" />
             </>
           ) : (
             <>
-              send&nbp;
+              send&nbsp;
               <IoIosSend />
             </>
           )}
