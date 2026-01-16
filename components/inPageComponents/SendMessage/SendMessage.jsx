@@ -3,6 +3,7 @@ import { useState } from "react";
 import SpotlightCard from "@/components/UI/SpotlightCard/SpotlightCard";
 import Image from "next/image";
 import { IoIosSend } from "react-icons/io";
+import { CircularProgress } from "@mui/material";
 
 function SendMessage({ isActive }) {
   const [number, setNumber] = useState("");
@@ -72,7 +73,17 @@ function SendMessage({ isActive }) {
           onClick={handleSend}
           disabled={loading || !isActive}
         >
-          {loading ? "sending..." : "send"} <IoIosSend />
+          {loading ? (
+            <>
+              send&nbp;
+              <CircularProgress size={18} color="var(--white)" />
+            </>
+          ) : (
+            <>
+              send&nbp;
+              <IoIosSend />
+            </>
+          )}
         </button>
       </div>
     </SpotlightCard>

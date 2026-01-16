@@ -19,7 +19,7 @@
     color: var(--connected);
 }
 
-.error {
+.disconnected {
     filter: drop-shadow(0 0 0.625rem var(--error));
     box-shadow: 0 0 0.625rem var(--error);
     border: 1px solid var(--error);

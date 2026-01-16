@@ -2,11 +2,13 @@
 import "./Status.css";
 import { GoDotFill } from "react-icons/go";
 
-function Status() {
+function Status({ isActive }) {
   return (
     <>
-      <span className="status glassmorphism connected">
-        connected
+      <span
+        className={`status glassmorphism ${isActive ? "connected" : "disconnected"}`}
+      >
+        {isActive ? "connected" : "disconnected"}
         <GoDotFill />
       </span>
     </>

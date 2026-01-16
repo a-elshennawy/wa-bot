@@ -184,12 +184,6 @@ app.post("/api/send", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send(
-    "<h1>Bot is Online!</h1><p>The API Bridge is working perfectly on port 4000.</p>",
-  );
-});
-
 app.listen(port, "0.0.0.0", () => {
   console.log(`API Bridge running on port ${port}`);
   startBot();
