@@ -52,11 +52,7 @@ function startBot() {
     },
     puppeteer: {
       headless: true,
-      executablePath:
-        process.env.CHROME_PATH ||
-        "/usr/bin/google-chrome-stable" ||
-        "/usr/bin/google-chrome" ||
-        "/usr/bin/chromium",
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
