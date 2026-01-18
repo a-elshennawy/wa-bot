@@ -9,22 +9,20 @@ scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive",
 ]
-
 creds_json = os.environ.get("GOOGLE_CREDENTIALS")
 
 if creds_json:
-    # 1. Convert string to JSON dictionary
     creds_json = creds_json.strip()
+    # Fix Railway double-wrapping
+    if creds_json.startswith('"') and creds_json.endswith('"'):
+        creds_json = json.loads(creds_json)
+
     creds_dict = json.loads(creds_json) if isinstance(creds_json, str) else creds_json
-
-    # 2. Fix ONLY the newlines (No regex, no body rebuilding)
-    if "private_key" in creds_dict:
-        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-
+    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 else:
     creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "nice-road-460613-q7-45b493f82c63.json", scope
+        "nice-road-460613-q7-ef48d8b8fb62.json", scope
     )
 
 client = gspread.authorize(creds)

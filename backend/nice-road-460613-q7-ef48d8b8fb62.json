@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "nice-road-460613-q7",
+  "private_key_id": "ef48d8b8fb620d79edca9d1dcc2aaba8d7628778",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDslp6sKydRXdqW\n7CkkcTIH+XIEdoGkC9S7wWLtgCI/ffjYaqKhPekGYxE1LYhtV9RrNIScS4WnruJZ\n4L9/HjfYb3mKP+0lK+5T5prfOWxdrYtzIkxSQSC0VMMI8NapXV7bAFji/3pYri4c\nLho2d3h4V9T8Bc3xaZdXZsMkkrgNhWSxSXtT26XxzDxzXMvmjwTnsB5ustVbVdz+\nzDjFDHYzcp2YNYrE0Mv62Dv8Fw8aHT4/7DmX6oiBx2qweU653x9MzZ8byz56fXqu\nVWPOeLJ6o4gM94vL94UMf3fcQxVtGxiJ1CcJR7d70d6GMpSfTIc3zk4nPO/NgwMi\nYtVXwjyjAgMBAAECggEAI1ddQi8QvgJXm1uRdRylp8mhjbzIITcVOFYrOXrTuDP7\nVBTF0ManRGl7EhGzA1EZ7Z5tlXgLR0uutf9b4RjPUyOqfmDjQ2i8aXMVZ8qzqeC5\nPTcpOyZNxN0JOhDZTXkhqMmfUuAX/h7yy18wUjo8LY9Cmm0hi5zwMGxXh+M/iYvo\ni6Xe9jBxYGrpjrODrdhrEbTtNr5BYdmDAwbLURtludyvGHzL/U7w934Z/ULMzvCT\n6F59sOYCTJtXsJ1bjHbRs+P99kSFEYpj86CONNrNf66KOXZExtj10vtft0gAXy5b\np83fSq9I++SsJsLY26gujSVsMkCL4ZWBRls2h6jDxQKBgQD/IOp8auD3tYyxVDnC\nrY2orqFNAYMF6OrjTrDx2Fd1Ee2Bg8owVC1s8Ys0rDcx5eqeFQSt7dcSzVPNyCqZ\ntk4pCNtglVbn4DKQQuyxsQBFHre8jCNUR+jyBGFHWdOjeRRurFaGATzc8U7UdFML\nN13I63YPvaTUffl8ifsJfl03vQKBgQDtZX4ITPFdgsmxO06J+mewrI1NIaDcQwiD\nQoTMjlCGUSh680cO6tHMBm+L5fhG+h5AGqnz+TrbkCyQwxhpdHzp+Vc9+3ulo2KS\nku8R2MH/nTK4KmMqfqNE+O22MxQpY0KkUTcICHnpLzyux24DkoU/A+pYeYRr2RUl\nerwWi2Db3wKBgFPmTzZ7L2BGo+3s9NHAoUVHqGPai2v2HMiDqEzgCGLHcoOVA3jB\nNe8Nv+mieMRAB9fUsaVBAel8/II/wUKrYSi9cOdiNSIr6HTojU4iFySj5Whr7XJZ\n85EjP5pnP+ISf1Wl9w46efluoa3cUzLtEjpwtHKYuwvmIZWDCrskgyNBAoGAMQc3\n+0DgzF45h3fnJYnopk1MtXRPg434kRtIz/JIYSUbxiC+OS93+roNiYgKOaZoXvbi\nyLddV4E0IwWX4hejwLK1OODaTYAr2HeuFjJ9BmyR0AU5C8qxr4n1lh6AeHe+iK8Z\nPXh6rRULZFFdwDEfgb8uQ+180sU3n9D0TXelnmMCgYEA2SiltuHnsB2H5d854jN2\ngJKLP4Kyby96qR/xEuiEjqLy+B9XI13xjbmjd50Nf4Nl4IqOnn4pLjAPm2a/I6+E\nEwA8226GFLuBu2xnwa3imzHPwSsoyrUWulFHIzCXX5Pc2PsUjRmTwKAVcayedpEW\n9QBFK5M6LsbIUiRBgI7CGEM=\n-----END PRIVATE KEY-----\n",
+  "client_email": "wa-bot@nice-road-460613-q7.iam.gserviceaccount.com",
+  "client_id": "103491726107264816046",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/wa-bot%40nice-road-460613-q7.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
