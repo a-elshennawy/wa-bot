@@ -13,26 +13,38 @@ scope = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-
+# Check if running on Railway (environment variable exists)
 creds_json = os.environ.get("GOOGLE_CREDENTIALS")
+
 if creds_json:
-    # 1. Handle double-wrapping: If variable starts with quotes, unwrap it
+    # 1. Handle Double-Wrapping (Unwrap outer quotes if present)
     creds_json = creds_json.strip()
     if creds_json.startswith('"') and creds_json.endswith('"'):
-        # This converts the string "{\"...}" into actual JSON text
         creds_json = json.loads(creds_json)
 
-    # 2. Parse the JSON text into a dictionary
+    # 2. Parse JSON
     if isinstance(creds_json, str):
         creds_dict = json.loads(creds_json)
     else:
         creds_dict = creds_json
 
-    # 3. FIX: Replace ALL variations of escaped newlines
-    pk = creds_dict["private_key"]
-    pk = pk.replace("\\\\n", "\n")  # Fix double escapes
-    pk = pk.replace("\\n", "\n")  # Fix single escapes
-    creds_dict["private_key"] = pk
+    # 3. NUCLEAR FIX: Reconstruct Private Key from scratch
+    # This ignores whether it has \n, \\n, spaces, or tabs.
+    # It grabs only the base64 data and rebuilds the headers.
+    raw_key = creds_dict.get("private_key", "")
+
+    # Remove existing headers and all non-base64 characters
+    key_body = re.sub(r"[^a-zA-Z0-9+/=]", "", raw_key.replace("PRIVATE KEY", ""))
+
+    # Split the body into 64-character lines (Standard PEM format)
+    chunked_body = "\n".join(key_body[i : i + 64] for i in range(0, len(key_body), 64))
+
+    # Reassemble properly
+    final_key = (
+        f"-----BEGIN PRIVATE KEY-----\n{chunked_body}\n-----END PRIVATE KEY-----"
+    )
+
+    creds_dict["private_key"] = final_key
 
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 else:
@@ -43,6 +55,7 @@ else:
     )
 
 client = gspread.authorize(creds)
+# This is line 46 where it was failing
 sheet = client.open_by_key("1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As").sheet1
 rows = sheet.get_all_records()
 print(f"✅ Loaded {len(rows)} rows")
@@ -80,5 +93,4 @@ print(f"📦 Found {len(numbers)} valid numbers")
 # =========================
 # Output for Node.js
 # =========================
-# We print the JSON so Node.js can catch it in its 'stdout'
 print(json.dumps({"numbers": numbers}))
