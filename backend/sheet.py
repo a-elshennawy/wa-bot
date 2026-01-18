@@ -5,25 +5,23 @@ import re
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
+# =========================
+# Google Sheets Auth (FILE ONLY)
+# =========================
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive",
 ]
-creds_json = os.environ.get("GOOGLE_CREDENTIALS")
 
-if creds_json:
-    creds_json = creds_json.strip()
-    # Fix Railway double-wrapping
-    if creds_json.startswith('"') and creds_json.endswith('"'):
-        creds_json = json.loads(creds_json)
+# Force use of the file you just uploaded
+json_file = "nice-road-460613-q7-258158f521b3.json"
 
-    creds_dict = json.loads(creds_json) if isinstance(creds_json, str) else creds_json
-    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+if os.path.exists(json_file):
+    creds = ServiceAccountCredentials.from_json_keyfile_name(json_file, scope)
 else:
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "nice-road-460613-q7-ef48d8b8fb62.json", scope
-    )
+    # This will help us see if Railway actually sees the file
+    print(f"ERROR: File {json_file} not found in directory")
+    exit(1)
 
 client = gspread.authorize(creds)
 sheet = client.open_by_key("1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As").sheet1
@@ -42,4 +40,5 @@ for row in rows:
         if len(phone) >= 11:
             numbers.append(phone)
 
+# The ONLY thing Node.js should see is this JSON
 print(json.dumps({"numbers": numbers}))
