@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs", "chromium", "glib", "nss", "nspr", "atk", "at-spi2-atk", "libdrm", "mesa", "gbm", "alsa-lib", "python3", "python3Packages.pip"]
+nixPkgs = ["nodejs", "chromium", "glib", "nss", "nspr", "atk", "at-spi2-atk", "libdrm", "mesa", "alsa-lib", "python3", "python3Packages.pip"]
 
 [phases.install]
 cmds = ["npm install", "python3 -m pip install gspread oauth2client"]
