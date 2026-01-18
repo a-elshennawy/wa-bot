@@ -26,18 +26,17 @@ function RecentActivities({ messages = [] }) {
         ) : (
           <ul>
             {messages.map((m, i) => (
-              <>
-                <li key={i}>
-                  <div className="message py-1">
-                    <strong>{m.from.split("@")[0]}</strong>&nbsp;:&nbsp;{m.text}
-                  </div>
-                  <div className="reply py-1">
-                    <strong>Bot</strong>&nbsp;:&nbsp;
-                    {m.reply}
-                  </div>
-                  <hr className="my-2" />
-                </li>
-              </>
+              // special id
+              <li key={`${m.from}-${m.time || i}`}>
+                <div className="message py-1">
+                  <strong>{m.from.split("@")[0]}</strong>&nbsp;:&nbsp;{m.text}
+                </div>
+                <div className="reply py-1">
+                  <strong>Bot</strong>&nbsp;:&nbsp;
+                  {m.reply}
+                </div>
+                <hr className="my-2" />
+              </li>
             ))}
           </ul>
         )}

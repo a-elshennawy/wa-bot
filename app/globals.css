@@ -154,7 +154,6 @@ a {
             textarea {
                 padding: 0.313rem;
                 border-radius: 0.625rem;
-                width: 100%;
                 color: var(--white);
 
                 &::placeholder {
@@ -164,6 +163,15 @@ a {
                 &:focus {
                     outline: none;
                     box-shadow: 0 0.25rem 1.875rem rgba(0, 0, 0, 0.5);
+                }
+            }
+
+            .numberContainer {
+                display: flex;
+                gap: 0.313rem;
+                .addNumBtn {
+                    border-radius: 0.625rem;
+                    color: var(--white);
                 }
             }
         }

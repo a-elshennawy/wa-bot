@@ -39,6 +39,15 @@ const data = JSON.parse(fs.readFileSync(DATA_FILE));
 const saveData = () =>
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 
+// Track processed messages to prevent duplicates
+const processedMessages = new Set();
+const MESSAGE_CACHE_DURATION = 60000; // 1 minute
+
+// Clean old message IDs periodically
+setInterval(() => {
+  processedMessages.clear();
+}, MESSAGE_CACHE_DURATION);
+
 // ==================
 // WhatsApp Client Logic
 // ==================
@@ -75,12 +84,25 @@ function startBot() {
   });
 
   client.on("message", async (msg) => {
+    // Skip if message is from bot, from group, or has no body
     if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
+
+    // super unique id to get that message in particular
+    const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
+
+    // Check if we've already processed this message
+    if (processedMessages.has(messageId)) {
+      console.log("Duplicate message detected, skipping:", messageId);
+      return;
+    }
+
+    // Mark message as processed
+    processedMessages.add(messageId);
 
     const text = msg.body.toLowerCase().trim();
     const from = msg.from;
 
-    console.log("Message received:", text);
+    console.log("Message received:", text, "from:", from);
     data.stats.received++;
 
     const replyText = getReply(text);
@@ -90,7 +112,7 @@ function startBot() {
         const chat = await msg.getChat();
         await chat.sendMessage(replyText, { sendSeen: false });
 
-        console.log("Reply sent via Chat Object");
+        console.log("Reply sent to:", from);
 
         data.stats.replied++;
         data.messages.push({
@@ -117,8 +139,9 @@ function startBot() {
 }
 
 // ==================
-// API Endpoints
+// API Endpoints for the front end (DO NOT TOUCH)
 // ==================
+
 app.get("/api/status", (req, res) => {
   res.json({
     stats: data.stats,
@@ -182,6 +205,47 @@ app.post("/api/send", async (req, res) => {
     console.error("Manual send error:", err.message);
     res.status(500).json({ error: "Failed to send message" });
   }
+});
+
+// New endpoint for sending to multiple numbers
+app.post("/api/send-bulk", async (req, res) => {
+  let { numbers, message } = req.body;
+
+  if (!isBotReady) {
+    return res.status(500).json({ error: "Bot is not connected" });
+  }
+
+  if (!Array.isArray(numbers) || numbers.length === 0) {
+    return res.status(400).json({ error: "Invalid numbers array" });
+  }
+
+  const results = [];
+
+  for (const number of numbers) {
+    try {
+      let cleanNumber = number.replace(/\D/g, "");
+      if (cleanNumber.startsWith("00")) cleanNumber = cleanNumber.substring(2);
+      if (cleanNumber.startsWith("0")) cleanNumber = cleanNumber.substring(1);
+
+      const chatId = cleanNumber.includes("@c.us")
+        ? cleanNumber
+        : `${cleanNumber}@c.us`;
+
+      const chat = await client.getChatById(chatId);
+      await chat.sendMessage(message, { sendSeen: false });
+
+      console.log(`Bulk message sent to ${chatId}`);
+      results.push({ number, success: true });
+
+      // Small delay between messages to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (err) {
+      console.error(`Failed to send to ${number}:`, err.message);
+      results.push({ number, success: false, error: err.message });
+    }
+  }
+
+  res.json({ results });
 });
 
 app.listen(port, "0.0.0.0", () => {

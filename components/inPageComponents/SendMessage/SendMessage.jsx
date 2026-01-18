@@ -4,33 +4,79 @@ import SpotlightCard from "@/components/UI/SpotlightCard/SpotlightCard";
 import Image from "next/image";
 import { IoIosSend } from "react-icons/io";
 import { CircularProgress } from "@mui/material";
+import { IoPersonAddSharp } from "react-icons/io5";
+import { MdDelete } from "react-icons/md";
 
 function SendMessage({ isActive }) {
-  const [number, setNumber] = useState("");
+  const [numbers, setNumbers] = useState([""]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const addNumberField = () => {
+    setNumbers([...numbers, ""]);
+  };
+
+  const removeNumberField = (index) => {
+    if (numbers.length > 1) {
+      setNumbers(numbers.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateNumber = (index, value) => {
+    const newNumbers = [...numbers];
+    newNumbers[index] = value;
+    setNumbers(newNumbers);
+  };
+
   const handleSend = async () => {
-    if (!number || !message) return alert("Please fill all fields");
+    const validNumbers = numbers.filter((n) => n.trim() !== "");
+
+    if (validNumbers.length === 0 || !message) {
+      return alert("Please fill all fields");
+    }
 
     setLoading(true);
     const botUrl = process.env.NEXT_PUBLIC_BOT_URL || "http://localhost:4000";
 
     try {
-      const res = await fetch(`${botUrl}/api/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ number, message }),
-      });
+      // If only one number, use single send endpoint
+      if (validNumbers.length === 1) {
+        const res = await fetch(`${botUrl}/api/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ number: validNumbers[0], message }),
+        });
 
-      if (res.ok) {
-        alert("Message sent!");
-        setMessage(""); // Clear message field
+        if (res.ok) {
+          alert("Message sent!");
+          setMessage("");
+          setNumbers([""]);
+        } else {
+          alert("Failed to send. Check if bot is connected.");
+        }
       } else {
-        alert("Failed to send. Check if bot is connected.");
+        // Use bulk send endpoint for multiple numbers
+        const res = await fetch(`${botUrl}/api/send-bulk`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ numbers: validNumbers, message }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const successCount = data.results.filter((r) => r.success).length;
+          alert(
+            `Messages sent to ${successCount}/${validNumbers.length} numbers!`,
+          );
+          setMessage("");
+          setNumbers([""]);
+        } else {
+          alert("Failed to send. Check if bot is connected.");
+        }
       }
     } catch (err) {
       console.error(err);
+      alert("Error sending message");
     } finally {
       setLoading(false);
     }
@@ -46,17 +92,45 @@ function SendMessage({ isActive }) {
         <Image src="/icons/message.webp" alt="logo" width={32} height={32} />
       </div>
       <hr />
+
       <div className="inputContainer py-1 px-0">
         <p className="mb-1">kindly include international code</p>
-        <input
-          type="text"
-          className="glassmorphism"
-          placeholder="phone number..."
-          value={number}
-          disabled={!isActive}
-          onChange={(e) => setNumber(e.target.value)}
-        />
+
+        {numbers.map((number, index) => (
+          <div key={index} className="numberContainer mb-2">
+            <input
+              type="text"
+              className="glassmorphism"
+              placeholder="phone number..."
+              value={number}
+              disabled={!isActive}
+              onChange={(e) => updateNumber(index, e.target.value)}
+            />
+
+            {index === numbers.length - 1 ? (
+              <button
+                className={`${!isActive ? "disabledBtn" : ""} glassmorphism addNumBtn`}
+                disabled={!isActive}
+                onClick={addNumberField}
+                title="Add another number"
+              >
+                <IoPersonAddSharp />
+              </button>
+            ) : (
+              <button
+                className={`${!isActive ? "disabledBtn" : ""} glassmorphism addNumBtn`}
+                disabled={!isActive}
+                onClick={() => removeNumberField(index)}
+                title="Remove this number"
+                style={{ backgroundColor: "rgba(255, 50, 50, 0.3)" }}
+              >
+                <MdDelete />
+              </button>
+            )}
+          </div>
+        ))}
       </div>
+
       <div className="inputContainer py-1 px-0">
         <textarea
           className="glassmorphism"
@@ -76,7 +150,7 @@ function SendMessage({ isActive }) {
           {loading ? (
             <>
               send&nbsp;
-              <CircularProgress size={18} color="var(--white)" />
+              <CircularProgress size={18} color="inherit" />
             </>
           ) : (
             <>
