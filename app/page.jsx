@@ -3,6 +3,7 @@ import Authentication from "@/components/inPageComponents/Authentication/Authent
 import BotStatus from "@/components/inPageComponents/BotStatus/BotStatus";
 import RecentActivities from "@/components/inPageComponents/RecentActivities/RecentActivities";
 import SendMessage from "@/components/inPageComponents/SendMessage/SendMessage";
+import SheetBulk from "@/components/inPageComponents/SheetBulk/SheetBulk";
 import Status from "@/components/UI/Status/Status";
 import { useEffect, useState, useCallback } from "react";
 
@@ -70,6 +71,7 @@ export default function Home() {
         <BotStatus isActive={botData.active} onRefresh={fetchData} />
         <Authentication qrCode={botData.qr} isActive={botData.active} />
         <SendMessage isActive={botData.active} />
+        <SheetBulk isActive={botData.active} />
         <RecentActivities messages={messages} />
       </div>
     </>

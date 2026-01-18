@@ -84,19 +84,15 @@ function startBot() {
   });
 
   client.on("message", async (msg) => {
-    // Skip if message is from bot, from group, or has no body
     if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
 
-    // super unique id to get that message in particular
     const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
 
-    // Check if we've already processed this message
     if (processedMessages.has(messageId)) {
       console.log("Duplicate message detected, skipping:", messageId);
       return;
     }
 
-    // Mark message as processed
     processedMessages.add(messageId);
 
     const text = msg.body.toLowerCase().trim();
@@ -139,9 +135,8 @@ function startBot() {
 }
 
 // ==================
-// API Endpoints for the front end (DO NOT TOUCH)
+// API Endpoints
 // ==================
-
 app.get("/api/status", (req, res) => {
   res.json({
     stats: data.stats,
@@ -207,7 +202,7 @@ app.post("/api/send", async (req, res) => {
   }
 });
 
-// New endpoint for sending to multiple numbers
+// Endpoint for sending to multiple numbers (used by Python script and frontend)
 app.post("/api/send-bulk", async (req, res) => {
   let { numbers, message } = req.body;
 
@@ -237,7 +232,6 @@ app.post("/api/send-bulk", async (req, res) => {
       console.log(`Bulk message sent to ${chatId}`);
       results.push({ number, success: true });
 
-      // Small delay between messages to avoid rate limiting
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (err) {
       console.error(`Failed to send to ${number}:`, err.message);
@@ -246,6 +240,104 @@ app.post("/api/send-bulk", async (req, res) => {
   }
 
   res.json({ results });
+});
+
+// UPDATE: Run Python script to fetch latest numbers from sheet
+app.post("/api/update-sheet", async (req, res) => {
+  try {
+    const { exec } = require("child_process");
+    const path = require("path");
+
+    const pythonScript = path.join(__dirname, "sheet.py");
+
+    // Try python3 first (Linux/Mac), fall back to python (Windows)
+    const pythonCmd = process.platform === "win32" ? "python" : "python3";
+
+    exec(`${pythonCmd} "${pythonScript}"`, (error, stdout, stderr) => {
+      if (error) {
+        console.error("Python script error:", error);
+        return res.status(500).json({ error: "Failed to run Python script" });
+      }
+
+      console.log("Python output:", stdout);
+
+      // Read the generated file
+      const NUMBERS_FILE = "./sheet_numbers.json";
+      if (fs.existsSync(NUMBERS_FILE)) {
+        const fileContent = fs.readFileSync(NUMBERS_FILE, "utf8");
+        const { numbers } = JSON.parse(fileContent);
+        res.json({ success: true, count: numbers.length });
+      } else {
+        res.status(500).json({ error: "Numbers file not created" });
+      }
+    });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// SEND: Send message to all numbers from sheet file
+app.post("/api/send-from-sheet", async (req, res) => {
+  const { message } = req.body;
+
+  if (!isBotReady) {
+    return res.status(500).json({ error: "Bot is not connected" });
+  }
+
+  if (!message) {
+    return res.status(400).json({ error: "Message is required" });
+  }
+
+  try {
+    const NUMBERS_FILE = "./sheet_numbers.json";
+
+    if (!fs.existsSync(NUMBERS_FILE)) {
+      return res.status(404).json({
+        error: "Click UPDATE first to fetch numbers from sheet",
+      });
+    }
+
+    const fileContent = fs.readFileSync(NUMBERS_FILE, "utf8");
+    const { numbers } = JSON.parse(fileContent);
+
+    if (!numbers || numbers.length === 0) {
+      return res.status(400).json({ error: "No numbers found" });
+    }
+
+    console.log(`📤 Sending to ${numbers.length} numbers...`);
+
+    const results = [];
+
+    for (const number of numbers) {
+      try {
+        let cleanNumber = number.replace(/\D/g, "");
+        if (cleanNumber.startsWith("00"))
+          cleanNumber = cleanNumber.substring(2);
+        if (cleanNumber.startsWith("0")) cleanNumber = cleanNumber.substring(1);
+
+        const chatId = cleanNumber.includes("@c.us")
+          ? cleanNumber
+          : `${cleanNumber}@c.us`;
+
+        const chat = await client.getChatById(chatId);
+        await chat.sendMessage(message, { sendSeen: false });
+
+        console.log(`✅ Sent to ${chatId}`);
+        results.push({ number, success: true });
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } catch (err) {
+        console.error(`❌ Failed: ${number}`, err.message);
+        results.push({ number, success: false, error: err.message });
+      }
+    }
+
+    res.json({ results, total: numbers.length });
+  } catch (err) {
+    console.error("Send error:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(port, "0.0.0.0", () => {
