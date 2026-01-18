@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["nodejs", "chromium", "glib", "nss", "nspr", "atk", "at-spi2-atk", "libdrm", "mesa", "alsa-lib", "python3", "python3Packages.pip", "python3Packages.gspread", "python3Packages.oauth2client"]
-
-[phases.install]
-cmds = ["npm install"]
-
-[start]
-cmd = "PUPPETEER_EXECUTABLE_PATH=$(which chromium) node bot.js"

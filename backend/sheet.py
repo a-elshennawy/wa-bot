@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import gspread
@@ -12,10 +13,17 @@ scope = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "fine-serenity-445909-r7-701b7fa397c0.json",
-    scope,
-)
+# Try to load credentials from environment variable (Railway)
+# Otherwise use local file (development)
+creds_json = os.environ.get("GOOGLE_CREDENTIALS")
+if creds_json:
+    creds_dict = json.loads(creds_json)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+else:
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        "fine-serenity-445909-r7-701b7fa397c0.json",
+        scope,
+    )
 
 client = gspread.authorize(creds)
 sheet = client.open_by_key("1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As").sheet1
@@ -53,7 +61,7 @@ for row in rows:
 print(f"📦 Found {len(numbers)} valid numbers")
 
 # =========================
-# Save numbers to JSON file (DON'T SEND HERE)
+# Save numbers to JSON file
 # =========================
 NUMBERS_FILE = "./sheet_numbers.json"
 
