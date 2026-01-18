@@ -244,99 +244,82 @@ app.post("/api/send-bulk", async (req, res) => {
 
 // UPDATE: Run Python script to fetch latest numbers from sheet
 app.post("/api/update-sheet", async (req, res) => {
-  try {
-    const { exec } = require("child_process");
-    const path = require("path");
+  const { exec } = require("child_process");
 
-    const pythonScript = path.join(__dirname, "sheet.py");
+  // 1. Run the script
+  exec(`python3 sheet.py`, (error, stdout, stderr) => {
+    if (error) {
+      console.error("Python Error:", stderr);
+      return res.status(500).json({ error: "Python script failed" });
+    }
 
-    const pythonCmd = "python3";
+    try {
+      // 2. Parse the PRINTED output from Python
+      const data = JSON.parse(stdout.trim());
 
-    exec(`${pythonCmd} "${pythonScript}"`, (error, stdout, stderr) => {
-      if (error) {
-        console.error("Python script error:", error);
-        return res.status(500).json({ error: "Failed to run Python script" });
-      }
+      // 3. Save to memory (global variable)
+      global.sheetNumbers = data.numbers;
 
-      console.log("Python output:", stdout);
-
-      // Read the generated file
-      const NUMBERS_FILE = "./sheet_numbers.json";
-      if (fs.existsSync(NUMBERS_FILE)) {
-        const fileContent = fs.readFileSync(NUMBERS_FILE, "utf8");
-        const { numbers } = JSON.parse(fileContent);
-        res.json({ success: true, count: numbers.length });
-      } else {
-        res.status(500).json({ error: "Numbers file not created" });
-      }
-    });
-  } catch (err) {
-    console.error("Update error:", err);
-    res.status(500).json({ error: err.message });
-  }
+      console.log(
+        `Successfully loaded ${data.numbers.length} numbers to memory.`,
+      );
+      res.json({ success: true, count: data.numbers.length });
+    } catch (e) {
+      console.error("Parse Error. Python output was:", stdout);
+      res
+        .status(500)
+        .json({ error: "Failed to parse numbers from Python output" });
+    }
+  });
 });
 
 // SEND: Send message to all numbers from sheet file
 app.post("/api/send-from-sheet", async (req, res) => {
   const { message } = req.body;
 
-  if (!isBotReady) {
+  if (!isBotReady)
     return res.status(500).json({ error: "Bot is not connected" });
+  if (!message) return res.status(400).json({ error: "Message is required" });
+
+  // Use the memory variable instead of reading a file
+  const numbers = global.sheetNumbers;
+
+  if (!numbers || numbers.length === 0) {
+    return res
+      .status(404)
+      .json({ error: "No numbers in memory. Click UPDATE first." });
   }
 
-  if (!message) {
-    return res.status(400).json({ error: "Message is required" });
+  console.log(`📤 Sending to ${numbers.length} numbers from memory...`);
+  const results = [];
+
+  for (const number of numbers) {
+    try {
+      let cleanNumber = number.replace(/\D/g, "");
+      if (cleanNumber.startsWith("00")) cleanNumber = cleanNumber.substring(2);
+      if (cleanNumber.startsWith("0")) cleanNumber = cleanNumber.substring(1);
+
+      const chatId = cleanNumber.includes("@c.us")
+        ? cleanNumber
+        : `${cleanNumber}@c.us`;
+
+      const chat = await client.getChatById(chatId);
+      await chat.sendMessage(message, { sendSeen: false });
+
+      console.log(`✅ Sent to ${chatId}`);
+      results.push({ number, success: true });
+
+      // Anti-ban delay (3 seconds)
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    } catch (err) {
+      console.error(`❌ Failed: ${number}`, err.message);
+      results.push({ number, success: false, error: err.message });
+    }
   }
 
-  try {
-    const NUMBERS_FILE = "./sheet_numbers.json";
-
-    if (!fs.existsSync(NUMBERS_FILE)) {
-      return res.status(404).json({
-        error: "Click UPDATE first to fetch numbers from sheet",
-      });
-    }
-
-    const fileContent = fs.readFileSync(NUMBERS_FILE, "utf8");
-    const { numbers } = JSON.parse(fileContent);
-
-    if (!numbers || numbers.length === 0) {
-      return res.status(400).json({ error: "No numbers found" });
-    }
-
-    console.log(`📤 Sending to ${numbers.length} numbers...`);
-
-    const results = [];
-
-    for (const number of numbers) {
-      try {
-        let cleanNumber = number.replace(/\D/g, "");
-        if (cleanNumber.startsWith("00"))
-          cleanNumber = cleanNumber.substring(2);
-        if (cleanNumber.startsWith("0")) cleanNumber = cleanNumber.substring(1);
-
-        const chatId = cleanNumber.includes("@c.us")
-          ? cleanNumber
-          : `${cleanNumber}@c.us`;
-
-        const chat = await client.getChatById(chatId);
-        await chat.sendMessage(message, { sendSeen: false });
-
-        console.log(`✅ Sent to ${chatId}`);
-        results.push({ number, success: true });
-
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch (err) {
-        console.error(`❌ Failed: ${number}`, err.message);
-        results.push({ number, success: false, error: err.message });
-      }
-    }
-
-    res.json({ results, total: numbers.length });
-  } catch (err) {
-    console.error("Send error:", err);
-    res.status(500).json({ error: err.message });
-  }
+  // Clear memory after sending to keep things clean
+  global.sheetNumbers = [];
+  res.json({ results, total: results.length });
 });
 
 app.listen(port, "0.0.0.0", () => {

@@ -14,10 +14,14 @@ scope = [
 ]
 
 # Check if running on Railway (environment variable exists)
+# Check if running on Railway
 creds_json = os.environ.get("GOOGLE_CREDENTIALS")
 if creds_json:
-    # Railway - use environment variable
     creds_dict = json.loads(creds_json)
+
+    if "\\n" in creds_dict["private_key"]:
+        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 else:
     # Local - use file
@@ -62,12 +66,7 @@ for row in rows:
 print(f"📦 Found {len(numbers)} valid numbers")
 
 # =========================
-# Save numbers to JSON file
+# Output for Node.js
 # =========================
-NUMBERS_FILE = "./sheet_numbers.json"
-
-with open(NUMBERS_FILE, "w", encoding="utf-8") as f:
-    json.dump({"numbers": numbers}, f, ensure_ascii=False, indent=2)
-
-print(f"💾 Saved {len(numbers)} numbers to {NUMBERS_FILE}")
-print("✅ Done! Use the frontend to send messages.")
+# We print the JSON so Node.js can catch it in its 'stdout'
+print(json.dumps({"numbers": numbers}))
