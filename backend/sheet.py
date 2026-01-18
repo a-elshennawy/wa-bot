@@ -13,15 +13,16 @@ scope = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-# Try to load credentials from environment variable (Railway)
-# Otherwise use local file (development)
+# Check if running on Railway (environment variable exists)
 creds_json = os.environ.get("GOOGLE_CREDENTIALS")
 if creds_json:
+    # Railway - use environment variable
     creds_dict = json.loads(creds_json)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 else:
+    # Local - use file
     creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "fine-serenity-445909-r7-701b7fa397c0.json",
+        "nice-road-460613-q7-45b493f82c63.json",
         scope,
     )
 
