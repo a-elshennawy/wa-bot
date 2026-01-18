@@ -1,8 +1,8 @@
 [phases.setup]
-nixPkgs = ["node", "chromium", "glib", "nss", "nspr", "atk", "at-spi2-atk", "libdrm", "mesa", "gbm", "alsa-lib"]
+nixPkgs = ["node", "chromium", "glib", "nss", "nspr", "atk", "at-spi2-atk", "libdrm", "mesa", "gbm", "alsa-lib", "python39", "python39Packages.pip"]
 
-[phases.build]
-cmds = ["npm install"]
+[phases.install]
+cmds = ["npm install", "pip install gspread oauth2client"]
 
 [start]
 cmd = "PUPPETEER_EXECUTABLE_PATH=$(which chromium) node bot.js"
