@@ -3,6 +3,8 @@ import { useState } from "react";
 import SpotlightCard from "@/components/UI/SpotlightCard/SpotlightCard";
 import Image from "next/image";
 import { CircularProgress } from "@mui/material";
+import { MdUpdate } from "react-icons/md";
+import { IoIosSend } from "react-icons/io";
 
 function SheetBulk({ isActive }) {
   const [message, setMessage] = useState("");
@@ -104,11 +106,10 @@ function SheetBulk({ isActive }) {
             value={message}
             disabled={!isActive}
             onChange={(e) => setMessage(e.target.value)}
-            rows={4}
           ></textarea>
         </div>
 
-        <div className="actions py-2 px-0 d-flex gap-2">
+        <div className="actions py-2 px-0">
           <button
             className={`glassmorphism ${!isActive ? "disabledBtn" : ""}`}
             onClick={handleUpdate}
@@ -118,10 +119,13 @@ function SheetBulk({ isActive }) {
             {updating ? (
               <>
                 updating&nbsp;
-                <CircularProgress size={18} color="inherit" />
+                <CircularProgress size={18} />
               </>
             ) : (
-              <>update&nbsp;</>
+              <>
+                update&nbsp;
+                <MdUpdate size={18} />
+              </>
             )}
           </button>
 
@@ -134,10 +138,13 @@ function SheetBulk({ isActive }) {
             {loading ? (
               <>
                 sending&nbsp;
-                <CircularProgress size={18} color="inherit" />
+                <CircularProgress size={18} />
               </>
             ) : (
-              <>send&nbsp;</>
+              <>
+                send&nbsp;
+                <IoIosSend />
+              </>
             )}
           </button>
         </div>
