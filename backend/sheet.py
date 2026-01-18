@@ -13,14 +13,26 @@ scope = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-# Check if running on Railway (environment variable exists)
-# Check if running on Railway
+
 creds_json = os.environ.get("GOOGLE_CREDENTIALS")
 if creds_json:
-    creds_dict = json.loads(creds_json)
+    # 1. Handle double-wrapping: If variable starts with quotes, unwrap it
+    creds_json = creds_json.strip()
+    if creds_json.startswith('"') and creds_json.endswith('"'):
+        # This converts the string "{\"...}" into actual JSON text
+        creds_json = json.loads(creds_json)
 
-    if "\\n" in creds_dict["private_key"]:
-        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+    # 2. Parse the JSON text into a dictionary
+    if isinstance(creds_json, str):
+        creds_dict = json.loads(creds_json)
+    else:
+        creds_dict = creds_json
+
+    # 3. FIX: Replace ALL variations of escaped newlines
+    pk = creds_dict["private_key"]
+    pk = pk.replace("\\\\n", "\n")  # Fix double escapes
+    pk = pk.replace("\\n", "\n")  # Fix single escapes
+    creds_dict["private_key"] = pk
 
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 else:
