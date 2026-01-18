@@ -250,8 +250,11 @@ app.post("/api/update-sheet", async (req, res) => {
 
     const pythonScript = path.join(__dirname, "sheet.py");
 
-    // Try python3 first (Linux/Mac), fall back to python (Windows)
-    const pythonCmd = process.platform === "win32" ? "python" : "python3";
+    const pythonCmd = process.env.RAILWAY_ENVIRONMENT
+      ? "python"
+      : process.platform === "win32"
+        ? "python"
+        : "python3";
 
     exec(`${pythonCmd} "${pythonScript}"`, (error, stdout, stderr) => {
       if (error) {
