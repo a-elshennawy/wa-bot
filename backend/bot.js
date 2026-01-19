@@ -82,33 +82,37 @@ function startBot() {
   });
 
   client.on("message", async (msg) => {
-    if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
+      if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
 
-    const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
-    if (processedMessages.has(messageId)) return;
-    processedMessages.add(messageId);
+      const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
+      if (processedMessages.has(messageId)) return;
+      processedMessages.add(messageId);
 
-    const text = msg.body.toLowerCase().trim();
-    data.stats.received++;
+      const text = msg.body.toLowerCase().trim();
+      data.stats.received++;
 
-    const replyText = getReply(text);
-    if (replyText) {
-      try {
-        const chat = await msg.getChat();
-        await chat.sendMessage(replyText, { sendSeen: false });
-        data.stats.replied++;
-        data.messages.push({
-          from: msg.from,
-          text,
-          reply: replyText,
-          time: new Date().toISOString(),
-        });
-        saveData();
-      } catch (e) {
-        console.error("Reply error:", e.message);
+      const replyText = getReply(text);
+
+      if (replyText) {
+        try {
+          const chat = await msg.getChat();
+          await chat.sendMessage(replyText, { sendSeen: false });
+          data.stats.replied++;
+          data.messages.push({
+            from: msg.from,
+            text,
+            reply: replyText,
+            time: new Date().toISOString()
+          });
+          saveData();
+        } catch (e) {
+          console.error("Reply error:", e.message);
+        }
       }
-    }
-  });
+    });
+
+    client.initialize().catch((err) => console.error("Init error:", err.message));
+  }
 
   client.on("disconnected", () => {
     isBotReady = false;
