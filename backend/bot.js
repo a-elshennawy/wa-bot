@@ -48,7 +48,7 @@ function startBot() {
     puppeteer: {
       headless: true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-      protocolTimeout: 60000, // 1 minute timeout to avoid overloading
+      protocolTimeout: 0,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -110,6 +110,7 @@ app.get("/api/messages", (req, res) =>
   res.json(data.messages.slice(-10).reverse()),
 );
 
+// Replace your existing /api/update-sheet
 app.post("/api/update-sheet", async (req, res) => {
   try {
     let keyData;
@@ -150,31 +151,44 @@ app.post("/api/update-sheet", async (req, res) => {
     });
 
     global.sheetNumbers = numbers;
+    console.log(`✅ Loaded ${numbers.length} numbers`);
     res.json({ success: true, count: numbers.length });
   } catch (err) {
     console.error("Sheet Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message, count: 0 });
   }
 });
 
+// Replace your existing /api/send-from-sheet
 app.post("/api/send-from-sheet", async (req, res) => {
   const { message } = req.body;
-  if (!isBotReady || !message || !global.sheetNumbers)
-    return res.status(400).json({ error: "Not ready" });
 
-  for (const number of global.sheetNumbers) {
+  if (!isBotReady)
+    return res.status(500).json({ error: "Bot not connected", results: [] });
+  if (!global.sheetNumbers || global.sheetNumbers.length === 0) {
+    return res.status(400).json({ error: "No numbers loaded", results: [] });
+  }
+
+  const results = [];
+  // Use a copy so we don't mess up the global array while looping
+  const targets = [...global.sheetNumbers];
+
+  for (const number of targets) {
     try {
-      const chat = await client.getChatById(
-        `${number.replace(/\D/g, "")}@c.us`,
-      );
-      await chat.sendMessage(message, { sendSeen: false });
+      const chatId = `${number}@c.us`;
+      await client.sendMessage(chatId, message);
+      results.push({ number, success: true });
+      console.log(`✅ Sent to ${number}`);
+      W;
+      // Safety delay
       await new Promise((r) => setTimeout(r, 3000));
     } catch (e) {
-      console.error("Bulk error:", e.message);
+      console.error(`❌ Failed ${number}:`, e.message);
+      results.push({ number, success: false, error: e.message });
     }
   }
-  global.sheetNumbers = [];
-  res.json({ success: true });
+
+  res.json({ success: true, results, total: results.length });
 });
 
 app.listen(port, "0.0.0.0", () => {
