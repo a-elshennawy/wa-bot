@@ -250,7 +250,7 @@ app.post("/api/update-sheet", async (req, res) => {
     // Look for the key in Environment Variables
     const keyData = process.env.GOOGLE_CREDS_JSON
       ? JSON.parse(process.env.GOOGLE_CREDS_JSON)
-      : require("./credsAPI.json"); // Fallback for local testing
+      : require("./google_creds.json"); // Fallback for local testing
 
     const SCOPES = [
       "https://www.googleapis.com/auth/spreadsheets",

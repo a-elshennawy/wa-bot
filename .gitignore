@@ -43,4 +43,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/backend/credsAPI.json
+/backend/google_creds.json
