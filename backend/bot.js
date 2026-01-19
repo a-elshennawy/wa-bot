@@ -4,6 +4,8 @@ const express = require("express");
 const getReply = require("./replies");
 const qrcode = require("qrcode-terminal");
 const cors = require("cors");
+const { GoogleSpreadsheet } = require("google-spreadsheet");
+const { JWT } = require("google-auth-library");
 
 let latestQR = "";
 let isBotReady = false;
@@ -244,33 +246,54 @@ app.post("/api/send-bulk", async (req, res) => {
 
 // UPDATE: Run Python script to fetch latest numbers from sheet
 app.post("/api/update-sheet", async (req, res) => {
-  const { exec } = require("child_process");
+  try {
+    const creds = require("./credsAPI.json");
+    const SCOPES = [
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/drive.readonly",
+    ];
 
-  // 1. Run the script
-  exec(`python3 sheet.py`, (error, stdout, stderr) => {
-    if (error) {
-      console.error("Python Error:", stderr);
-      return res.status(500).json({ error: "Python script failed" });
-    }
+    const auth = new JWT({
+      email: creds.client_email,
+      key: creds.private_key,
+      scopes: SCOPES,
+    });
 
-    try {
-      // 2. Parse the PRINTED output from Python
-      const data = JSON.parse(stdout.trim());
+    // Use your specific Sheet ID
+    const doc = new GoogleSpreadsheet(
+      "1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As",
+      auth,
+    );
 
-      // 3. Save to memory (global variable)
-      global.sheetNumbers = data.numbers;
+    await doc.loadInfo();
+    const sheet = doc.sheetsByIndex[0];
+    const rows = await sheet.getRows();
 
-      console.log(
-        `Successfully loaded ${data.numbers.length} numbers to memory.`,
+    const numbers = [];
+    rows.forEach((row) => {
+      // row.toObject() gives you the data keys
+      const data = row.toObject();
+      // Find "phone" key (case-insensitive)
+      const phoneKey = Object.keys(data).find(
+        (k) => k.trim().toLowerCase() === "phone",
       );
-      res.json({ success: true, count: data.numbers.length });
-    } catch (e) {
-      console.error("Parse Error. Python output was:", stdout);
-      res
-        .status(500)
-        .json({ error: "Failed to parse numbers from Python output" });
-    }
-  });
+      const rawPhone = data[phoneKey];
+
+      if (rawPhone) {
+        let phone = String(rawPhone).replace(/\D/g, "");
+        if (phone.startsWith("00")) phone = phone.substring(2);
+        if (phone.startsWith("1") && phone.length === 10) phone = "20" + phone;
+        if (phone.length >= 11) numbers.push(phone);
+      }
+    });
+
+    global.sheetNumbers = numbers;
+    console.log(`✅ Loaded ${numbers.length} numbers via JS`);
+    res.json({ success: true, count: numbers.length });
+  } catch (err) {
+    console.error("JS Sheet Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch from sheet via JS" });
+  }
 });
 
 // SEND: Send message to all numbers from sheet file
