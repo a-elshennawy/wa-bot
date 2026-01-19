@@ -5,11 +5,15 @@ import Image from "next/image";
 import { IoIosSend } from "react-icons/io";
 import { CircularProgress } from "@mui/material";
 import { IoPersonAddSharp } from "react-icons/io5";
-import { MdDelete } from "react-icons/md";
+import { MdCancel, MdDelete } from "react-icons/md";
+import { FaCheckCircle } from "react-icons/fa";
+import { motion, AnimatePresence } from "motion/react";
 
 function SendMessage({ isActive }) {
   const [numbers, setNumbers] = useState([""]);
   const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const addNumberField = () => {
@@ -48,11 +52,17 @@ function SendMessage({ isActive }) {
         });
 
         if (res.ok) {
-          alert("Message sent!");
-          setMessage("");
-          setNumbers([""]);
+          setSuccess("Message sent");
+          setTimeout(() => {
+            setSuccess("");
+            setMessage("");
+            setNumbers([""]);
+          }, 2000);
         } else {
-          alert("Failed to send. Check if bot is connected.");
+          setError("failed to send. check if bot is connected.");
+          setTimeout(() => {
+            setError("");
+          }, 2000);
         }
       } else {
         // Use bulk send endpoint for multiple numbers
@@ -63,104 +73,137 @@ function SendMessage({ isActive }) {
         });
 
         if (res.ok) {
-          const data = await res.json();
-          const successCount = data.results.filter((r) => r.success).length;
-          alert(
-            `Messages sent to ${successCount}/${validNumbers.length} numbers!`,
-          );
-          setMessage("");
-          setNumbers([""]);
+          setSuccess("Message sent");
+          setTimeout(() => {
+            setSuccess("");
+            setMessage("");
+            setNumbers([""]);
+          }, 2000);
         } else {
-          alert("Failed to send. Check if bot is connected.");
+          setError("failed to send. check if bot is connected.");
+          setTimeout(() => {
+            setError("");
+          }, 2000);
         }
       }
     } catch (err) {
       console.error(err);
-      alert("Error sending message");
+      setError("error :", err);
+      setTimeout(() => {
+        setError("");
+      }, 2000);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SpotlightCard
-      className="colCard py-3 px-2"
-      spotlightColor="rgba(15, 255, 0,1)"
-    >
-      <div className="cardHeader text-start py-1 px-0">
-        <h4>send message</h4>
-        <Image src="/icons/message.webp" alt="logo" width={32} height={32} />
-      </div>
-      <hr />
+    <>
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="notifictaion glassmorphism error"
+          >
+            {error} <MdCancel size={18} />
+          </motion.div>
+        )}
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="notifictaion glassmorphism success"
+          >
+            {success} <FaCheckCircle size={18} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="inputContainer py-1 px-0">
-        <p className="mb-1">kindly include international code</p>
+      <SpotlightCard
+        className="colCard py-3 px-2"
+        spotlightColor="rgba(15, 255, 0,1)"
+      >
+        <div className="cardHeader text-start py-1 px-0">
+          <h4>send message</h4>
+          <Image src="/icons/message.webp" alt="logo" width={32} height={32} />
+        </div>
+        <hr />
 
-        {numbers.map((number, index) => (
-          <div key={index} className="numberContainer mb-2">
-            <input
-              type="text"
-              className="glassmorphism"
-              placeholder="phone number..."
-              value={number}
-              disabled={!isActive}
-              onChange={(e) => updateNumber(index, e.target.value)}
-            />
+        <div className="inputContainer py-1 px-0">
+          <p className="mb-1">kindly include international code</p>
 
-            {index === numbers.length - 1 ? (
-              <button
-                className={`${!isActive ? "disabledBtn" : ""} glassmorphism addNumBtn`}
+          {numbers.map((number, index) => (
+            <div key={index} className="numberContainer mb-2">
+              <input
+                type="text"
+                className="glassmorphism"
+                placeholder="phone number..."
+                value={number}
                 disabled={!isActive}
-                onClick={addNumberField}
-                title="Add another number"
-              >
-                <IoPersonAddSharp />
-              </button>
+                onChange={(e) => updateNumber(index, e.target.value)}
+              />
+
+              {index === numbers.length - 1 ? (
+                <>
+                  <button
+                    className={`${!isActive ? "disabledBtn" : ""} glassmorphism numBtn`}
+                    disabled={!isActive}
+                    onClick={addNumberField}
+                    title="Add another number"
+                  >
+                    <IoPersonAddSharp size={18} />
+                  </button>
+                </>
+              ) : (
+                <button
+                  className={`${!isActive ? "disabledBtn" : ""} glassmorphism numBtn delNumBtn`}
+                  disabled={!isActive}
+                  onClick={() => removeNumberField(index)}
+                  title="Remove this number"
+                >
+                  <MdDelete size={18} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="inputContainer py-1 px-0">
+          <textarea
+            className="glassmorphism"
+            placeholder="enter your message..."
+            value={message}
+            disabled={!isActive}
+            onChange={(e) => setMessage(e.target.value)}
+          ></textarea>
+        </div>
+
+        <div className="actions py-2 px-0">
+          <button
+            className={`glassmorphism ${!isActive ? "disabledBtn" : ""}`}
+            onClick={handleSend}
+            disabled={loading || !isActive}
+          >
+            {loading ? (
+              <>
+                send&nbsp;
+                <CircularProgress size={18} color="inherit" />
+              </>
             ) : (
-              <button
-                className={`${!isActive ? "disabledBtn" : ""} glassmorphism addNumBtn`}
-                disabled={!isActive}
-                onClick={() => removeNumberField(index)}
-                title="Remove this number"
-                style={{ backgroundColor: "rgba(255, 50, 50, 0.3)" }}
-              >
-                <MdDelete />
-              </button>
+              <>
+                send&nbsp;
+                <IoIosSend />
+              </>
             )}
-          </div>
-        ))}
-      </div>
-
-      <div className="inputContainer py-1 px-0">
-        <textarea
-          className="glassmorphism"
-          placeholder="enter your message..."
-          value={message}
-          disabled={!isActive}
-          onChange={(e) => setMessage(e.target.value)}
-        ></textarea>
-      </div>
-
-      <div className="actions py-2 px-0">
-        <button
-          className={`glassmorphism ${!isActive ? "disabledBtn" : ""}`}
-          onClick={handleSend}
-          disabled={loading || !isActive}
-        >
-          {loading ? (
-            <>
-              send&nbsp;
-              <CircularProgress size={18} color="inherit" />
-            </>
-          ) : (
-            <>
-              send&nbsp;
-              <IoIosSend />
-            </>
-          )}
-        </button>
-      </div>
-    </SpotlightCard>
+          </button>
+        </div>
+      </SpotlightCard>
+    </>
   );
 }
 
