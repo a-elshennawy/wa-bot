@@ -247,54 +247,24 @@ app.post("/api/send-bulk", async (req, res) => {
 // UPDATE: Run Python script to fetch latest numbers from sheet
 app.post("/api/update-sheet", async (req, res) => {
   try {
-    const creds = require("./credsAPI.json");
+    // Look for the key in Environment Variables
+    const keyData = process.env.GOOGLE_CREDS_JSON
+      ? JSON.parse(process.env.GOOGLE_CREDS_JSON)
+      : require("./credsAPI.json"); // Fallback for local testing
+
     const SCOPES = [
       "https://www.googleapis.com/auth/spreadsheets",
       "https://www.googleapis.com/auth/drive.readonly",
     ];
 
     const auth = new JWT({
-      email: creds.client_email,
-      key: creds.private_key,
+      email: keyData.client_email,
+      key: keyData.private_key.replace(/\\n/g, '\n'), // Critical fix for Railway
       scopes: SCOPES,
     });
 
-    // Use your specific Sheet ID
-    const doc = new GoogleSpreadsheet(
-      "1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As",
-      auth,
-    );
-
-    await doc.loadInfo();
-    const sheet = doc.sheetsByIndex[0];
-    const rows = await sheet.getRows();
-
-    const numbers = [];
-    rows.forEach((row) => {
-      // row.toObject() gives you the data keys
-      const data = row.toObject();
-      // Find "phone" key (case-insensitive)
-      const phoneKey = Object.keys(data).find(
-        (k) => k.trim().toLowerCase() === "phone",
-      );
-      const rawPhone = data[phoneKey];
-
-      if (rawPhone) {
-        let phone = String(rawPhone).replace(/\D/g, "");
-        if (phone.startsWith("00")) phone = phone.substring(2);
-        if (phone.startsWith("1") && phone.length === 10) phone = "20" + phone;
-        if (phone.length >= 11) numbers.push(phone);
-      }
-    });
-
-    global.sheetNumbers = numbers;
-    console.log(`✅ Loaded ${numbers.length} numbers via JS`);
-    res.json({ success: true, count: numbers.length });
-  } catch (err) {
-    console.error("JS Sheet Error:", err.message);
-    res.status(500).json({ error: "Failed to fetch from sheet via JS" });
-  }
-});
+    const doc = new GoogleSpreadsheet("1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As", auth);
+    // ... (rest of your existing row processing code)
 
 // SEND: Send message to all numbers from sheet file
 app.post("/api/send-from-sheet", async (req, res) => {
