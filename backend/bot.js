@@ -47,16 +47,16 @@ function startBot() {
     },
     puppeteer: {
       headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       protocolTimeout: 0,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
-        "--disable-extensions",
       ],
     },
+    webVersion: "2.2412.54",
   });
 
   client.on("qr", (qr) => {
@@ -176,12 +176,12 @@ app.post("/api/send-from-sheet", async (req, res) => {
   for (const number of targets) {
     try {
       const chatId = `${number}@c.us`;
+      // Use client.sendMessage directly instead of getChat
       await client.sendMessage(chatId, message);
+
       results.push({ number, success: true });
       console.log(`✅ Sent to ${number}`);
-      W;
-      // Safety delay
-      await new Promise((r) => setTimeout(r, 3000));
+      await new Promise((r) => setTimeout(r, 4000)); // 4 sec delay
     } catch (e) {
       console.error(`❌ Failed ${number}:`, e.message);
       results.push({ number, success: false, error: e.message });
