@@ -173,7 +173,7 @@ app.post("/api/send-from-sheet", async (req, res) => {
       const chatId = `${number.replace(/\D/g, "")}@c.us`;
       await client.sendMessage(chatId, message, { sendSeen: false });
       results.push({ number, success: true });
-      await new Promise((r) => setTimeout(r, 4000));
+      await new Promise((r) => setTimeout(r, 2000));
     } catch (e) {
       results.push({ number, success: false, error: e.message });
     }
