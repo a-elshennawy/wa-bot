@@ -18,7 +18,6 @@ app.use(express.json());
 app.use(cors());
 
 const DATA_FILE = "./data.json";
-
 if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(
     DATA_FILE,
@@ -29,13 +28,9 @@ if (!fs.existsSync(DATA_FILE)) {
     ),
   );
 }
-
 const data = JSON.parse(fs.readFileSync(DATA_FILE));
 const saveData = () =>
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-
-const processedMessages = new Set();
-setInterval(() => processedMessages.clear(), 60000);
 
 function startBot() {
   client = new Client({
@@ -56,7 +51,6 @@ function startBot() {
         "--disable-gpu",
       ],
     },
-    webVersion: "2.2412.54",
   });
 
   client.on("qr", (qr) => {
@@ -68,58 +62,37 @@ function startBot() {
     isBotReady = true;
     console.log("BOT READY");
   });
-
-  client.on("message", async (msg) => {
-    if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
-    const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
-    if (processedMessages.has(messageId)) return;
-    processedMessages.add(messageId);
-
-    const text = msg.body.toLowerCase().trim();
-    data.stats.received++;
-    const replyText = getReply(text);
-
-    if (replyText) {
-      try {
-        const chat = await msg.getChat();
-        await chat.sendMessage(replyText, { sendSeen: false });
-        data.stats.replied++;
-        data.messages.push({
-          from: msg.from,
-          text,
-          reply: replyText,
-          time: new Date().toISOString(),
-        });
-        saveData();
-      } catch (e) {
-        console.error("Send error:", e.message);
-      }
-    }
-  });
-
   client.on("disconnected", () => {
     isBotReady = false;
   });
+
   client.initialize().catch((err) => console.error("Init error:", err.message));
 }
+
+// --- ENDPOINTS ---
 
 app.get("/api/status", (req, res) =>
   res.json({ stats: data.stats, qr: latestQR, active: isBotReady }),
 );
-app.get("/api/messages", (req, res) =>
-  res.json(data.messages.slice(-10).reverse()),
-);
 
-// Replace your existing /api/update-sheet
+app.post("/api/send", async (req, res) => {
+  const { number, message } = req.body;
+  if (!isBotReady) return res.status(500).json({ error: "Bot not connected" });
+  try {
+    const chatId = `${number.replace(/\D/g, "")}@c.us`;
+    // Added sendSeen: false to keep it hidden
+    await client.sendMessage(chatId, message, { sendSeen: false });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/update-sheet", async (req, res) => {
   try {
-    let keyData;
-    if (process.env.GOOGLE_CREDS_JSON) {
-      keyData = JSON.parse(process.env.GOOGLE_CREDS_JSON);
-    } else {
-      keyData = require("./credsAPI.json");
-    }
-
+    const keyData = process.env.GOOGLE_CREDS_JSON
+      ? JSON.parse(process.env.GOOGLE_CREDS_JSON)
+      : require("./credsAPI.json");
     const auth = new JWT({
       email: keyData.client_email,
       key: keyData.private_key.replace(/\\n/g, "\n"),
@@ -128,14 +101,12 @@ app.post("/api/update-sheet", async (req, res) => {
         "https://www.googleapis.com/auth/drive.readonly",
       ],
     });
-
     const doc = new GoogleSpreadsheet(
       "1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As",
       auth,
     );
     await doc.loadInfo();
     const rows = await doc.sheetsByIndex[0].getRows();
-
     const numbers = [];
     rows.forEach((row) => {
       const d = row.toObject();
@@ -149,46 +120,39 @@ app.post("/api/update-sheet", async (req, res) => {
         if (p.length >= 11) numbers.push(p);
       }
     });
-
     global.sheetNumbers = numbers;
-    console.log(`✅ Loaded ${numbers.length} numbers`);
     res.json({ success: true, count: numbers.length });
   } catch (err) {
-    console.error("Sheet Error:", err.message);
-    res.status(500).json({ success: false, error: err.message, count: 0 });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Replace your existing /api/send-from-sheet
 app.post("/api/send-from-sheet", async (req, res) => {
   const { message } = req.body;
-
-  if (!isBotReady)
-    return res.status(500).json({ error: "Bot not connected", results: [] });
-  if (!global.sheetNumbers || global.sheetNumbers.length === 0) {
-    return res.status(400).json({ error: "No numbers loaded", results: [] });
-  }
-
+  if (!isBotReady || !global.sheetNumbers)
+    return res.status(400).json({ error: "Not ready" });
   const results = [];
-  // Use a copy so we don't mess up the global array while looping
-  const targets = [...global.sheetNumbers];
-
-  for (const number of targets) {
+  for (const number of global.sheetNumbers) {
     try {
-      const chatId = `${number}@c.us`;
-      // Use client.sendMessage directly instead of getChat
-      await client.sendMessage(chatId, message);
-
+      const chatId = `${number.replace(/\D/g, "")}@c.us`;
+      // Send message without triggering the broken sync logic
+      await client.sendMessage(chatId, message, { sendSeen: false });
       results.push({ number, success: true });
-      console.log(`✅ Sent to ${number}`);
-      await new Promise((r) => setTimeout(r, 4000)); // 4 sec delay
+      await new Promise((r) => setTimeout(r, 4000));
     } catch (e) {
-      console.error(`❌ Failed ${number}:`, e.message);
       results.push({ number, success: false, error: e.message });
     }
   }
-
+  global.sheetNumbers = [];
   res.json({ success: true, results, total: results.length });
+});
+
+app.post("/api/logout", (req, res) => {
+  console.log("Forcing logout and restart...");
+  res.json({ success: true, message: "Restarting..." });
+  // Instead of waiting for the browser, we just kill the process.
+  // Railway will reboot it instantly.
+  process.exit(0);
 });
 
 app.listen(port, "0.0.0.0", () => {
