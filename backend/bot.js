@@ -17,20 +17,12 @@ const port = process.env.PORT || 4000;
 app.use(express.json());
 app.use(cors());
 
-// ==================
-// Data Persistence
-// ==================
 const DATA_FILE = "./data.json";
-
 if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(
     DATA_FILE,
     JSON.stringify(
-      {
-        messages: [],
-        blacklist: [],
-        stats: { received: 0, replied: 0 },
-      },
+      { messages: [], blacklist: [], stats: { received: 0, replied: 0 } },
       null,
       2,
     ),
@@ -42,13 +34,8 @@ const saveData = () =>
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 
 const processedMessages = new Set();
-setInterval(() => {
-  processedMessages.clear();
-}, 60000);
+setInterval(() => processedMessages.clear(), 60000);
 
-// ==================
-// WhatsApp Logic
-// ==================
 function startBot() {
   client = new Client({
     authStrategy: new LocalAuth({ clientId: "mano-bot" }),
@@ -74,60 +61,52 @@ function startBot() {
     latestQR = qr;
     qrcode.generate(qr, { small: true });
   });
-
   client.on("ready", () => {
     latestQR = "";
     isBotReady = true;
     console.log("BOT READY");
   });
-
-  client.on("message", async (msg) => {
-      if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
-
-      const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
-      if (processedMessages.has(messageId)) return;
-      processedMessages.add(messageId);
-
-      const text = msg.body.toLowerCase().trim();
-      data.stats.received++;
-
-      const replyText = getReply(text);
-
-      if (replyText) {
-        try {
-          const chat = await msg.getChat();
-          await chat.sendMessage(replyText, { sendSeen: false });
-          data.stats.replied++;
-          data.messages.push({
-            from: msg.from,
-            text,
-            reply: replyText,
-            time: new Date().toISOString()
-          });
-          saveData();
-        } catch (e) {
-          console.error("Reply error:", e.message);
-        }
-      }
-    });
-
-    client.initialize().catch((err) => console.error("Init error:", err.message));
-  }
-
   client.on("disconnected", () => {
     isBotReady = false;
+  });
+
+  // RESTORED: Original auto-reply logic with full data saving
+  client.on("message", async (msg) => {
+    if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
+
+    const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
+    if (processedMessages.has(messageId)) return;
+    processedMessages.add(messageId);
+
+    const text = msg.body.toLowerCase().trim();
+    data.stats.received++;
+
+    const replyText = getReply(text);
+
+    if (replyText) {
+      try {
+        const chat = await msg.getChat();
+        await chat.sendMessage(replyText, { sendSeen: false });
+        data.stats.replied++;
+        data.messages.push({
+          from: msg.from,
+          text,
+          reply: replyText,
+          time: new Date().toISOString(),
+        });
+        saveData();
+      } catch (e) {
+        console.error("Reply error:", e.message);
+      }
+    }
   });
 
   client.initialize().catch((err) => console.error("Init error:", err.message));
 }
 
-// ==================
-// API Endpoints
-// ==================
-
-app.get("/api/status", (req, res) => {
-  res.json({ stats: data.stats, qr: latestQR, active: isBotReady });
-});
+app.get("/api/status", (req, res) =>
+  res.json({ stats: data.stats, qr: latestQR, active: isBotReady }),
+);
 
 app.get("/api/messages", (req, res) => {
   res.json(data.messages ? data.messages.slice(-10).reverse() : []);
@@ -150,7 +129,6 @@ app.post("/api/update-sheet", async (req, res) => {
     const keyData = process.env.GOOGLE_CREDS_JSON
       ? JSON.parse(process.env.GOOGLE_CREDS_JSON)
       : require("./credsAPI.json");
-
     const auth = new JWT({
       email: keyData.client_email,
       key: keyData.private_key.replace(/\\n/g, "\n"),
@@ -159,14 +137,12 @@ app.post("/api/update-sheet", async (req, res) => {
         "https://www.googleapis.com/auth/drive.readonly",
       ],
     });
-
     const doc = new GoogleSpreadsheet(
       "1n_YhhtYk4ZiMHOhOl5m5QSz_XCAq8KD3blRvf_tZ-As",
       auth,
     );
     await doc.loadInfo();
     const rows = await doc.sheetsByIndex[0].getRows();
-
     const numbers = [];
     rows.forEach((row) => {
       const d = row.toObject();
@@ -180,7 +156,6 @@ app.post("/api/update-sheet", async (req, res) => {
         if (p.length >= 11) numbers.push(p);
       }
     });
-
     global.sheetNumbers = numbers;
     res.json({ success: true, count: numbers.length });
   } catch (err) {
@@ -190,14 +165,10 @@ app.post("/api/update-sheet", async (req, res) => {
 
 app.post("/api/send-from-sheet", async (req, res) => {
   const { message } = req.body;
-  if (!isBotReady || !global.sheetNumbers) {
-    return res.status(400).json({ error: "Not ready", results: [] });
-  }
-
+  if (!isBotReady || !global.sheetNumbers)
+    return res.status(400).json({ error: "Not ready" });
   const results = [];
-  const targets = [...global.sheetNumbers];
-
-  for (const number of targets) {
+  for (const number of global.sheetNumbers) {
     try {
       const chatId = `${number.replace(/\D/g, "")}@c.us`;
       await client.sendMessage(chatId, message, { sendSeen: false });
