@@ -48,11 +48,13 @@ function startBot() {
     puppeteer: {
       headless: true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+      protocolTimeout: 60000, // 1 minute timeout to avoid overloading
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
+        "--disable-extensions",
       ],
     },
   });
