@@ -161,7 +161,7 @@ app.post("/api/send-bulk", async (req, res) => {
 
       results.push({ number, success: true });
       // 3 seconds delay
-      await new Promise((r) => setTimeout(r, 3000));
+      await new Promise((r) => setTimeout(r, 5000));
     } catch (e) {
       console.error(`Failed to send to ${number}:`, e.message);
       results.push({ number, success: false, error: e.message });
@@ -235,7 +235,7 @@ app.post("/api/send-from-sheet", async (req, res) => {
       results.push({ number, success: true });
 
       // 2 seconds delay to avoid rate limit hit
-      await new Promise((r) => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 5000));
     } catch (e) {
       results.push({ number, success: false, error: e.message });
     }
