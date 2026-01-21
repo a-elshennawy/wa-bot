@@ -7,17 +7,27 @@ const cors = require("cors");
 // using modern, official google sheet apis for better compatibility with web
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 const { JWT } = require("google-auth-library");
+const http = require("http");
+const { Server } = require("socket.io");
 
 let latestQR = "";
 let isBotReady = false;
 let client;
 
 const app = express();
+const server = http.createServer(app);
 // dynamic port switch
 const port = process.env.PORT || 4000;
 
 app.use(express.json());
 app.use(cors());
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 const DATA_FILE = "./data.json";
 if (!fs.existsSync(DATA_FILE)) {
@@ -39,9 +49,44 @@ const saveData = () =>
 const processedMessages = new Set();
 setInterval(() => processedMessages.clear(), 60000);
 
+// helper function to broadcast status updates
+const broadcastStatus = () => {
+  io.emit("status_update", {
+    stats: data.stats,
+    qr: latestQR,
+    active: isBotReady,
+  });
+};
+
+// this is our safety .. in case of safe limit hit .. delay applied
+const replyQueue = [];
+let isProcessingQueue = false;
+
+async function processQueue() {
+  if (isProcessingQueue || replyQueue.length === 0) return;
+  isProcessingQueue = true;
+
+  while (replyQueue.length > 0) {
+    const { chat, replyText } = replyQueue.shift();
+    try {
+      // Crucial: keeping sendSeen: false
+      await chat.sendMessage(replyText, { sendSeen: false });
+      // 3 seconds safety gap for Railway Free Tier
+      await new Promise((r) => setTimeout(r, 3000));
+    } catch (e) {
+      console.error("Queue send error:", e.message);
+    }
+  }
+  isProcessingQueue = false;
+}
+
+// -------------------
+// ARAISE :)
+// -------------------
 function startBot() {
   client = new Client({
     authStrategy: new LocalAuth({ clientId: "mano-bot" }),
+    //this might break the whole app if whatsapp forces a higher version
     webVersionCache: {
       type: "remote",
       remotePath:
@@ -63,11 +108,13 @@ function startBot() {
   client.on("qr", (qr) => {
     latestQR = qr;
     qrcode.generate(qr, { small: true });
+    broadcastStatus();
   });
   client.on("ready", () => {
     latestQR = "";
     isBotReady = true;
     console.log("BOT READY");
+    broadcastStatus();
   });
   client.on("disconnected", () => {
     isBotReady = false;
@@ -95,7 +142,10 @@ function startBot() {
     if (replyText) {
       try {
         const chat = await msg.getChat();
-        await chat.sendMessage(replyText, { sendSeen: false });
+
+        // Add to queue instead of sending immediately
+        replyQueue.push({ chat, replyText });
+
         data.stats.replied++;
         data.messages.push({
           from: msg.from,
@@ -104,6 +154,16 @@ function startBot() {
           time: new Date().toISOString(),
         });
         saveData();
+
+        // Start processing the queue
+        processQueue();
+
+        // Update UI via Socket.io
+        io.emit(
+          "messages_update",
+          data.messages ? data.messages.slice(-10).reverse() : [],
+        );
+        broadcastStatus();
       } catch (e) {
         console.error("Reply error:", e.message);
       }
@@ -248,29 +308,26 @@ app.post("/api/send-from-sheet", async (req, res) => {
 // logging out
 app.post("/api/logout", async (req, res) => {
   try {
-    if (client) {
-      //session termination
-      await client.logout();
+    isBotReady = false;
+    latestQR = "";
+    broadcastStatus();
 
-      // reset bot status
-      isBotReady = false;
-      latestQR = "";
-
-      // re0generate new qr-code for a new user
-      await client.initialize();
+    if (Client) {
+      await client.logout().catch(() => {});
+      await client.destroy().catch(() => {}); //kill internal browser
     }
-    res.json({ success: true, message: "Logged out. New QR generating..." });
-  } catch (e) {
-    console.error("Logout Error:", e.message);
 
-    // fallback incase browser it self fails inside railwat .. kill it all :) start clean
-    res.json({ success: false, error: e.message });
-    process.exit(1);
+    res.json({ success: true, message: "Session cleared. Restarting..." });
+
+    // start fresh client without killing node
+    startBot();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
 // important for the app to get connected to each other
-app.listen(port, "0.0.0.0", () => {
+server.listen(port, "0.0.0.0", () => {
   console.log(`Server on ${port}`);
   startBot();
 });

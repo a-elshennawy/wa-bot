@@ -6,6 +6,7 @@ import SendMessage from "@/components/inPageComponents/SendMessage/SendMessage";
 import SheetBulk from "@/components/inPageComponents/SheetBulk/SheetBulk";
 import Status from "@/components/UI/Status/Status";
 import { useEffect, useState, useCallback } from "react";
+import { io } from "socket.io-client";
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
@@ -41,21 +42,27 @@ export default function Home() {
 
   useEffect(() => {
     // 1. Initial Load & Bootstrap
-    import("bootstrap/dist/js/bootstrap.bundle.min.js")
-      .then(() => console.log("Bootstrap JS loaded"))
-      .catch(console.error);
-
+    import("bootstrap/dist/js/bootstrap.bundle.min.js");
     const handleContextMenu = (e) => e.preventDefault();
     window.addEventListener("contextmenu", handleContextMenu);
 
     // 2. Data Polling Logic
     fetchData(); // Immediate fetch on mount
-    const interval = setInterval(() => {
-      // Only fetch if the user is actually looking at the tab
-      if (document.visibilityState === "visible") {
-        fetchData();
-      }
-    }, 3000);
+
+    const botUrl = process.env.NEXT_PUBLIC_BOT_URL || "http://localhost:4000";
+    const socket = io(botUrl);
+
+    socket.on("connect", () => {
+      console.log("Connected to Bot Socket");
+    });
+
+    socket.on("status_update", (data) => {
+      setBotData(data);
+    });
+
+    socket.on("messages_update", (msgs) => {
+      setMessages(msgs);
+    });
 
     // Cleanup
     return () => {
@@ -69,7 +76,11 @@ export default function Home() {
       <Status isActive={botData.active} />
       <div className="mainContainer py-3 z-2">
         <BotStatus isActive={botData.active} onRefresh={fetchData} />
-        <Authentication qrCode={botData.qr} isActive={botData.active} />
+        <Authentication
+          key={botData.qr}
+          qrCode={botData.qr}
+          isActive={botData.active}
+        />
         <SendMessage isActive={botData.active} />
         <SheetBulk isActive={botData.active} />
         <RecentActivities messages={messages} />

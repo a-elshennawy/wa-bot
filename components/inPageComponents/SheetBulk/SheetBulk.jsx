@@ -116,7 +116,7 @@ function SheetBulk({ isActive }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="notifictaion glassmorphism error"
+            className="notifictaion error"
           >
             {error} <MdCancel size={18} />
           </motion.div>
@@ -127,7 +127,7 @@ function SheetBulk({ isActive }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="notifictaion glassmorphism success"
+            className="notifictaion success"
           >
             {success} <FaCheckCircle size={18} />
           </motion.div>
@@ -154,7 +154,8 @@ function SheetBulk({ isActive }) {
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   className="glassmorphism sheetNumbersCount text-start py-2 px-1 mb-1"
                 >
-                  {numbersCount} number are currently selected <FcContacts />
+                  {numbersCount} number are currently selected{" "}
+                  <FcContacts size={20} />
                 </motion.div>
               </>
             )}

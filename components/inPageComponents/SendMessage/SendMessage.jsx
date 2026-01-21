@@ -106,7 +106,7 @@ function SendMessage({ isActive }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="notifictaion glassmorphism error"
+            className="notifictaion error"
           >
             {error} <MdCancel size={18} />
           </motion.div>
@@ -117,7 +117,7 @@ function SendMessage({ isActive }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="notifictaion glassmorphism success"
+            className="notifictaion success"
           >
             {success} <FaCheckCircle size={18} />
           </motion.div>

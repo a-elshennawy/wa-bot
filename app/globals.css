@@ -129,6 +129,12 @@ a {
         .content {
             border-radius: 0.625rem;
 
+            .qrTimer {
+                width: fit-content;
+                border-radius: 0.625rem;
+                box-shadow: 0 0 0.625rem var(--black);
+            }
+
             .sheetNumbersCount {
                 display: flex;
                 align-items: center;
@@ -228,15 +234,13 @@ a {
 }
 
 .success {
-    filter: drop-shadow(0 0 0.313rem var(--connected));
-    box-shadow: 0 0 0.313rem var(--connected);
+    background-color: var(--white);
     color: var(--connected);
 }
 
 .error {
-    filter: drop-shadow(0 0 0.313rem var(--error));
-    box-shadow: 0 0 0.313rem var(--error);
-    color: var(--white);
+    background-color: var(--white);
+    color: var(--error);
 }
 
 ::-webkit-scrollbar {
