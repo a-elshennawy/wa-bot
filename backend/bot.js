@@ -155,6 +155,12 @@ function startBot() {
         });
         saveData();
 
+        // immediate ui update
+        io.emit(
+          "messages_update",
+          data.messages ? data.messages.slice(-10).reverse() : [],
+        );
+
         // Start processing the queue
         processQueue();
 
@@ -310,6 +316,14 @@ app.post("/api/logout", async (req, res) => {
   try {
     isBotReady = false;
     latestQR = "";
+
+    // clear the message history
+    data.messages = [];
+    saveData();
+
+    // clear ui
+    io.emit("messages_update", []);
+
     broadcastStatus();
 
     if (Client) {

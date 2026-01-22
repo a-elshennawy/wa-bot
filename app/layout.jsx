@@ -3,8 +3,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import ColorBends from "@/components/UI/ColorBends/ColorBends";
 
 export const metadata = {
-  title: "Wa-Bot",
-  description: "whats-App Bot",
+  title: "Islamic-Brand-Bot",
+  description: "Islamic Brand whats-App Bot",
 };
 
 export default function RootLayout({ children }) {
