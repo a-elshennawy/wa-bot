@@ -121,60 +121,60 @@ function startBot() {
   });
 
   // auto replies
-  client.on("message", async (msg) => {
-    if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
+  // client.on("message", async (msg) => {
+  //   if (msg.fromMe || msg.from.endsWith("@g.us") || !msg.body) return;
 
-    // setting a really unique id to prevent duplicated messages
-    const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
+  //   // setting a really unique id to prevent duplicated messages
+  //   const messageId = `${msg.from}_${msg.timestamp}_${msg.body}`;
 
-    // don't send it again if it already was sent
-    if (processedMessages.has(messageId)) return;
+  //   // don't send it again if it already was sent
+  //   if (processedMessages.has(messageId)) return;
 
-    // sent it if wasn't sent before
-    processedMessages.add(messageId);
+  //   // sent it if wasn't sent before
+  //   processedMessages.add(messageId);
 
-    const text = msg.body.toLowerCase().trim();
-    data.stats.received++;
+  //   const text = msg.body.toLowerCase().trim();
+  //   data.stats.received++;
 
-    const replyText = getReply(text);
+  //   const replyText = getReply(text);
 
-    // normal auto reply logic
-    if (replyText) {
-      try {
-        const chat = await msg.getChat();
+  //   // normal auto reply logic
+  //   if (replyText) {
+  //     try {
+  //       const chat = await msg.getChat();
 
-        // Add to queue instead of sending immediately
-        replyQueue.push({ chat, replyText });
+  //       // Add to queue instead of sending immediately
+  //       replyQueue.push({ chat, replyText });
 
-        data.stats.replied++;
-        data.messages.push({
-          from: msg.from,
-          text,
-          reply: replyText,
-          time: new Date().toISOString(),
-        });
-        saveData();
+  //       data.stats.replied++;
+  //       data.messages.push({
+  //         from: msg.from,
+  //         text,
+  //         reply: replyText,
+  //         time: new Date().toISOString(),
+  //       });
+  //       saveData();
 
-        // immediate ui update
-        io.emit(
-          "messages_update",
-          data.messages ? data.messages.slice(-10).reverse() : [],
-        );
+  //       // immediate ui update
+  //       io.emit(
+  //         "messages_update",
+  //         data.messages ? data.messages.slice(-10).reverse() : [],
+  //       );
 
-        // Start processing the queue
-        processQueue();
+  //       // Start processing the queue
+  //       processQueue();
 
-        // Update UI via Socket.io
-        io.emit(
-          "messages_update",
-          data.messages ? data.messages.slice(-10).reverse() : [],
-        );
-        broadcastStatus();
-      } catch (e) {
-        console.error("Reply error:", e.message);
-      }
-    }
-  });
+  //       // Update UI via Socket.io
+  //       io.emit(
+  //         "messages_update",
+  //         data.messages ? data.messages.slice(-10).reverse() : [],
+  //       );
+  //       broadcastStatus();
+  //     } catch (e) {
+  //       console.error("Reply error:", e.message);
+  //     }
+  //   }
+  // });
 
   client.initialize().catch((err) => console.error("Init error:", err.message));
 }
