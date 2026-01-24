@@ -51,12 +51,6 @@ function Authentication({ qrCode, isActive }) {
             >
               <QRCode value={qrCode} size={200} />
             </div>
-            <p
-              className="qrTimer glassmorphism mt-2 mx-auto p-1"
-              style={{ color: timer < 5 ? "var(--error)" : "var(--white)" }}
-            >
-              QR refreshes in: {timer}s
-            </p>
           </>
         ) : (
           <CircularProgress size={90} color="var(--white)" />
