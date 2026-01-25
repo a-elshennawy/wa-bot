@@ -209,36 +209,58 @@ app.post("/api/send", async (req, res) => {
 // for sending to multiple numbers
 app.post("/api/send-bulk", async (req, res) => {
   const { numbers, message } = req.body;
-
-  if (!isBotReady) {
-    return res.status(500).json({ error: "Bot not connected", results: [] });
-  }
-
-  if (!Array.isArray(numbers) || numbers.length === 0) {
-    return res.status(400).json({ error: "No numbers provided", results: [] });
-  }
+  if (!isBotReady) return res.status(500).json({ error: "Bot offline" });
 
   const results = [];
+  let batchCounter = 0;
+
+  console.log(`--- Starting Manual Bulk: ${numbers.length} numbers ---`);
 
   for (const number of numbers) {
     try {
-      const chatId = `${number.replace(/\D/g, "")}@c.us`;
-      await client.sendMessage(chatId, message, { sendSeen: false });
+      const cleanNumber = number.replace(/\D/g, "");
+      const chatId = `${cleanNumber}@c.us`;
 
-      results.push({ number, success: true });
-      // 3 seconds delay
-      await new Promise((r) => setTimeout(r, 5000));
+      // Check if number is registered to avoid crash
+      const isRegistered = await client.isRegisteredUser(chatId);
+      if (!isRegistered) {
+        console.log(`[SKIPPED] ${cleanNumber} - Not on WhatsApp`);
+        results.push({ number: cleanNumber, success: false });
+        continue;
+      }
+
+      await client.sendMessage(chatId, message, { sendSeen: false });
+      console.log(
+        `[SENT] ${cleanNumber} (${results.length + 1}/${numbers.length})`,
+      );
+      results.push({ number: cleanNumber, success: true });
+      batchCounter++;
+
+      const delay = batchCounter >= 20 ? 15000 : 5000;
+      if (batchCounter >= 20) {
+        console.log("--- Batch of 20 reached. Waiting 10s ---");
+        batchCounter = 0;
+      }
+
+      // Only delay if it's not the last number
+      if (results.length < numbers.length) {
+        await new Promise((r) => setTimeout(r, delay));
+      }
     } catch (e) {
-      console.error(`Failed to send to ${number}:`, e.message);
-      results.push({ number, success: false, error: e.message });
+      console.error(`[ERROR] ${number}: ${e.message}`);
+      results.push({ number, success: false });
+
+      if (e.message.includes("comms")) {
+        console.error(
+          "--- Critical Session Error (sendIq/comms). Stopping loop. ---",
+        );
+        break;
+      }
     }
   }
 
-  res.json({
-    success: true,
-    results,
-    total: numbers.length,
-  });
+  console.log(`--- Bulk Finished. Total processed: ${results.length} ---`);
+  res.json({ success: true, results, total: numbers.length });
 });
 
 // getting numbers from
@@ -288,25 +310,66 @@ app.post("/api/update-sheet", async (req, res) => {
   }
 });
 
-// send a custome message to all the numbers in the sheet
+// send to number from sheet
 app.post("/api/send-from-sheet", async (req, res) => {
   const { message } = req.body;
   if (!isBotReady || !global.sheetNumbers)
     return res.status(400).json({ error: "Not ready" });
+
   const results = [];
+  let batchCounter = 0;
+
+  console.log(
+    `--- Starting Sheet Bulk: ${global.sheetNumbers.length} numbers ---`,
+  );
+
   for (const number of global.sheetNumbers) {
     try {
-      const chatId = `${number.replace(/\D/g, "")}@c.us`;
-      await client.sendMessage(chatId, message, { sendSeen: false });
-      results.push({ number, success: true });
+      const cleanNumber = number.replace(/\D/g, "");
+      const chatId = `${cleanNumber}@c.us`;
 
-      // 2 seconds delay to avoid rate limit hit
-      await new Promise((r) => setTimeout(r, 5000));
+      const isRegistered = await client.isRegisteredUser(chatId);
+      if (!isRegistered) {
+        console.log(`[SKIPPED] ${cleanNumber} - Not on WhatsApp`);
+        results.push({
+          number: cleanNumber,
+          success: false,
+          error: "Not registered",
+        });
+        continue;
+      }
+
+      await client.sendMessage(chatId, message, { sendSeen: false });
+      console.log(
+        `[SENT] ${cleanNumber} (${results.length + 1}/${global.sheetNumbers.length})`,
+      );
+      results.push({ number: cleanNumber, success: true });
+      batchCounter++;
+
+      if (batchCounter >= 20) {
+        console.log("--- Batch of 20 reached. Waiting 10s ---");
+        await new Promise((r) => setTimeout(r, 15000));
+        batchCounter = 0;
+      } else {
+        // Only delay if it's not the last number
+        if (results.length < global.sheetNumbers.length) {
+          await new Promise((r) => setTimeout(r, 5000));
+        }
+      }
     } catch (e) {
+      console.error(`[ERROR] ${number}: ${e.message}`);
       results.push({ number, success: false, error: e.message });
+
+      if (e.message.includes("comms")) {
+        console.error(
+          "--- Critical Session Error (sendIq/comms). Stopping loop. ---",
+        );
+        break;
+      }
     }
   }
-  // clearing numbers to avoid memory leak or space complxity over long term or extreme usage
+
+  console.log(`--- Bulk Finished. Total: ${results.length} ---`);
   global.sheetNumbers = [];
   res.json({ success: true, results, total: results.length });
 });
